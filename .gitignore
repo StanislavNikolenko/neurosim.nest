@@ -6,3 +6,9 @@ spike_times.json
 
 # Input data
 data/
+
+# Nest output
+dist/
+
+# Node
+node_modules/
