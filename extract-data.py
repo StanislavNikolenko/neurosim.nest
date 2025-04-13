@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 import numpy as np
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, filtfilt, find_peaks
 import matplotlib.pyplot as plt
 import json
 
@@ -52,9 +52,15 @@ def bandpass_filter(signal, lowcut, highcut, fs, order=3):
     # Waveform shapes are preserved
     return filtfilt(b, a, signal)
 
-def detect_spikes(signal, threshold=-200):
-    spikes = np.where(signal < threshold)[0]
-    return spikes
+# Alternative method for spike detection. Previous version.
+# def detect_spikes(signal, threshold=-200):
+#     spikes = np.where(signal < threshold)[0]
+#     return spikes
+
+def detect_spikes(signal):
+    # Find positive peaks in the filtered intracellular signal
+    peaks, _ = find_peaks(signal, height=200, distance=int(0.001*config["sampling_rate"]))
+    return peaks
 
 def plot_spikes(signal, spike_indices, fs):
     times = np.arange(len(signal)) / fs
@@ -77,12 +83,12 @@ dat_file = "data/d11221/d11221.001.dat"
 config = parse_xml_config(xml_file)
 signal_data = load_dat_file(dat_file, config["n_channels"])
 
-channel_index = 0  # example: intracellular channel is the first one
-intracellular = signal_data[:, channel_index]
+intracellular_channel = config["n_channels"] - 2  # Second-to-last channel
+intracellular = signal_data[:, intracellular_channel]
 
 # The 300-3000 Hz range is a standard choice for spike detection.
 filtered = bandpass_filter(intracellular, 300, 3000, config["sampling_rate"])
-spike_indices = detect_spikes(filtered, threshold=-200)
+spike_indices = detect_spikes(filtered)
 
 plot_spikes(filtered, spike_indices, config["sampling_rate"])
 export_spike_times(spike_indices, config["sampling_rate"], "spike_times.json")
