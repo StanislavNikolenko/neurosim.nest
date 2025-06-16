@@ -12,3 +12,6 @@ dist/
 
 # Node
 node_modules/
+
+# Envs
+config/.env

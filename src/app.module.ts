@@ -11,8 +11,8 @@ import { Transport } from '@nestjs/microservices';
         name: 'INGEST_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: 'localhost',
-          port: 3001,
+          host: process.env.INGEST_SERVICE_HOST || 'localhost',
+          port: parseInt(process.env.INGEST_SERVICE_PORT || '3001'),
         },
       },
     ]),
