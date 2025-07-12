@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Observable } from 'rxjs';
 
@@ -10,4 +10,10 @@ export class AppController {
   ingest(): Observable<any> {
     return this.appService.ingest();
   }
+
+  @Get('/spike/:id')
+  getSpike(@Param('id') id: string): Observable<any> {
+    return this.appService.getSpike(id);
+  }
+
 }

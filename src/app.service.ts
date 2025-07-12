@@ -10,7 +10,12 @@ export class AppService {
 
   ingest(): Observable<any> {
     const pattern = { cmd: 'ingest' };
-    const payload = { timestamp: new Date(), data: 'test' };
+    return this.ingestClient.send(pattern, {});
+  }
+
+  getSpike(id: string): Observable<any> {
+    const pattern = { cmd: 'getSpike' };
+    const payload = { spikeId:id };
     return this.ingestClient.send(pattern, payload);
   }
 }
