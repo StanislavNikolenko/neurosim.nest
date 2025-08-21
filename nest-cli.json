@@ -1,8 +1,30 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src",
+  "monorepo": true,
+  "root": "apps/neurosim",
+  "sourceRoot": "apps/neurosim/src",
   "compilerOptions": {
     "deleteOutDir": true
+  },
+  "projects": {
+    "neurosim": {
+      "type": "application",
+      "root": "apps/neurosim",
+      "entryFile": "main",
+      "sourceRoot": "apps/neurosim/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/neurosim/tsconfig.app.json"
+      }
+    },
+    "neural-data-ingest": {
+      "type": "application",
+      "root": "apps/neural-data-ingest",
+      "entryFile": "main",
+      "sourceRoot": "apps/neural-data-ingest/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/neural-data-ingest/tsconfig.app.json"
+      }
+    }
   }
 }

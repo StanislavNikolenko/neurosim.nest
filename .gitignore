@@ -7,6 +7,9 @@ spike_times.json
 # Input data
 data/
 
+# Output data
+processed_neural_data/
+
 # Nest output
 dist/
 
