@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { ClientsModule } from '@nestjs/microservices';
 import { Transport } from '@nestjs/microservices';
 import { ConfigModule } from '@nestjs/config';
+import { LocalStorageService } from './storage/local-storage.service';
+import { S3StorageService } from './storage/s3-storage.service';
 
 @Module({
   imports: [
@@ -22,6 +24,6 @@ import { ConfigModule } from '@nestjs/config';
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, LocalStorageService, S3StorageService],
 })
 export class AppModule {}

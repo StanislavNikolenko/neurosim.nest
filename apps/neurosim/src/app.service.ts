@@ -1,11 +1,14 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
+import { LocalStorageService } from './storage/local-storage.service';
+import { StorageResult } from './storage/storage.interface';
 
 @Injectable()
 export class AppService {
   constructor(
-    @Inject('INGEST_SERVICE') private ingestClient: ClientProxy
+    @Inject('INGEST_SERVICE') private ingestClient: ClientProxy,
+    private readonly localStorageService: LocalStorageService,
   ) {}
 
   ingest(): Observable<any> {
@@ -13,9 +16,13 @@ export class AppService {
     return this.ingestClient.send(pattern, {});
   }
 
+  async uploadFile(file: Express.Multer.File): Promise<StorageResult> {
+    return this.localStorageService.uploadFile(file);
+  }
+
   getSpike(id: string): Observable<any> {
     const pattern = { cmd: 'getSpike' };
-    const payload = { spikeId:id };
+    const payload = { spikeId: id };
     return this.ingestClient.send(pattern, payload);
   }
 }
