@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # Load environment variables from config/.env
 load_dotenv(os.path.join('config', '.env'))
 
-NEURAL_DATA_DIR = os.getenv('PROCESSED_NEURAL_DATA_DIR');
+NEURAL_DATA_DIR = os.getenv('PROCESSED_NEURAL_DATA_DIR') or 'processed_neural_data';
 
 # Parse the XML configuration file to get the number of channels and sampling rate
 def parse_xml_config(xml_file):
@@ -107,9 +107,10 @@ def process_file_pair(xml_file, dat_file):
 
 def main():
     # Get all XML files in the data directory and its subdirectories
-    data_dir = "data"
+    data_dir = "data/uploads"
+    print(f"Processing files in {data_dir}");
     xml_files = glob.glob(os.path.join(data_dir, "**/*.xml"), recursive=True)
-    
+    print(f"Found {len(xml_files)} XML files");
     results = []
     for xml_file in xml_files:
         # Construct corresponding dat file path

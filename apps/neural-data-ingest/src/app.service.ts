@@ -6,24 +6,30 @@ import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Spike } from './spike.entity';
+import { Logger } from '@nestjs/common';
 
 const execAsync = promisify(exec);
 
 const PYTHON_PATH = process.env.PYTHON_PATH || 'python3';
-//const SCRIPT_PATH = process.env.SCRIPT_PATH || './extract-data.py';
-const PROCESSED_NEURAL_DATA_DIR = process.env.PROCESSED_NEURAL_DATA_DIR || 'processed_neural_data';
-const SCRIPT_PATH = path.resolve(process.cwd(), 'apps/neural-data-ingest/src/extract-data.py');
-console.log('Resolved script path:', SCRIPT_PATH);
+const PROCESSED_NEURAL_DATA_DIR =
+  process.env.PROCESSED_NEURAL_DATA_DIR || 'processed_neural_data';
+const SCRIPT_PATH = path.resolve(
+  process.cwd(),
+  'apps/neural-data-ingest/src/extract-data.py',
+);
 
 @Injectable()
 export class AppService {
   constructor(
     @InjectRepository(Spike)
     private neuralSpikeRepository: Repository<Spike>,
+    private readonly logger: Logger,
   ) {}
 
   async getSpike(spikeId: number): Promise<Spike> {
-    const result = await this.neuralSpikeRepository.findOne({ where: { id: spikeId } });
+    const result = await this.neuralSpikeRepository.findOne({
+      where: { id: spikeId },
+    });
     if (!result) {
       throw new Error('Neural spike not found');
     }
@@ -38,21 +44,23 @@ export class AppService {
 
   async runPythonScript(): Promise<string> {
     try {
-      console.log('Running Python script...');
-      console.log('process.env.SCRIPT_PATH', process.env.SCRIPT_PATH);
-      console.log(`PYTHON_PATH: ${PYTHON_PATH}`);
-      console.log('SCRIPT_PATH: ', SCRIPT_PATH);
+      this.logger.log('Running Python script...');
+      this.logger.log('process.env.SCRIPT_PATH', process.env.SCRIPT_PATH);
+      this.logger.log(`PYTHON_PATH: ${PYTHON_PATH}`);
+      this.logger.log('SCRIPT_PATH: ', SCRIPT_PATH);
 
-      const { stdout, stderr } = await execAsync(`${PYTHON_PATH} ${SCRIPT_PATH}`);
-      
+      const { stdout, stderr } = await execAsync(
+        `${PYTHON_PATH} ${SCRIPT_PATH}`,
+      );
+
       if (stderr) {
-        console.error('Python script error:', stderr);
+        this.logger.error('Python script error:', stderr);
         throw new Error('Python script execution failed');
       }
-      console.log('stdout:', stdout);
+      this.logger.log('stdout:', stdout);
       return stdout;
     } catch (error) {
-      console.error('Failed to execute Python script:', error);
+      this.logger.error('Failed to execute Python script:', error);
       throw error;
     }
   }
@@ -60,7 +68,7 @@ export class AppService {
   async ingestNeuralDataToDatabase(): Promise<void> {
     try {
       if (!fs.existsSync(PROCESSED_NEURAL_DATA_DIR)) {
-        console.log(`Directory ${PROCESSED_NEURAL_DATA_DIR} does not exist. No data to ingest.`);
+        this.logger.log(`Directory ${PROCESSED_NEURAL_DATA_DIR} does not exist. No data to ingest.`);
         return;
       }
 
@@ -68,7 +76,7 @@ export class AppService {
         .filter(file => file.endsWith('.json'));
 
       if (jsonFiles.length === 0) {
-        console.log('No JSON files found in processed data directory.');
+        this.logger.log('No JSON files found in processed data directory.');
         return;
       }
 
@@ -76,13 +84,13 @@ export class AppService {
 
       for (const jsonFile of jsonFiles) {
         const filePath = path.join(PROCESSED_NEURAL_DATA_DIR, jsonFile);
-        
+
         try {
           const fileContent = fs.readFileSync(filePath, 'utf8');
           const spikeData = JSON.parse(fileContent);
 
           if (!Array.isArray(spikeData)) {
-            console.warn(`File ${jsonFile} does not contain an array of spike data. Skipping.`);
+            this.logger.warn(`File ${jsonFile} does not contain an array of spike data. Skipping.`);
             continue;
           }
 
@@ -95,19 +103,19 @@ export class AppService {
           });
 
           await this.neuralSpikeRepository.save(spikes);
-          
+
           totalSpikesIngested += spikes.length;
-          console.log(`Ingested ${spikes.length} spikes from ${jsonFile}`);
-          
+          this.logger.log(`Ingested ${spikes.length} spikes from ${jsonFile}`);
+
         } catch (error) {
-          console.error(`Error processing file ${jsonFile}:`, error);
+          this.logger.error(`Error processing file ${jsonFile}:`, error);
         }
       }
 
-      console.log(`Total spikes ingested: ${totalSpikesIngested}`);
-      
+      this.logger.log(`Total spikes ingested: ${totalSpikesIngested}`);
+
     } catch (error) {
-      console.error('Error ingesting neural data to database:', error);
+      this.logger.error('Error ingesting neural data to database:', error);
       throw error;
     }
   }
