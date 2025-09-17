@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientsModule } from '@nestjs/microservices';
 import { Transport } from '@nestjs/microservices';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LocalStorageService } from './storage/local-storage.service';
 import { S3StorageService } from './storage/s3-storage.service';
 import { Logger } from '@nestjs/common';
@@ -25,6 +25,24 @@ import { Logger } from '@nestjs/common';
     ]),
   ],
   controllers: [AppController],
-  providers: [AppService, LocalStorageService, S3StorageService, Logger],
+  providers: [
+    AppService,
+    LocalStorageService,
+    S3StorageService,
+    Logger,
+    {
+      provide: 'STORAGE_SERVICE',
+      useFactory: (configService: ConfigService) => {
+        const storageType = configService.get<string>('STORAGE_TYPE', 'local');
+
+        if (storageType === 's3') {
+          return new S3StorageService(configService);
+        } else {
+          return new LocalStorageService(configService);
+        }
+      },
+      inject: [ConfigService],
+    },
+  ],
 })
 export class AppModule {}

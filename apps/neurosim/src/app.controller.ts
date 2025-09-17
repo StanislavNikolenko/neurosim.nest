@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Inject,
   Param,
   Post,
   UploadedFile,
@@ -9,15 +10,14 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Observable } from 'rxjs';
 import { AppService } from './app.service';
-import { LocalStorageService } from './storage/local-storage.service';
-import { StorageResult } from './storage/storage.interface';
+import { IStorageService, StorageResult } from './storage/storage.interface';
 import { Logger } from '@nestjs/common';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly storageService: LocalStorageService,
+    @Inject('STORAGE_SERVICE') private readonly storageService: IStorageService,
     private readonly logger: Logger,
   ) {}
 

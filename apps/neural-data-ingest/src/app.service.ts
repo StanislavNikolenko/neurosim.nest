@@ -68,12 +68,15 @@ export class AppService {
   async ingestNeuralDataToDatabase(): Promise<void> {
     try {
       if (!fs.existsSync(PROCESSED_NEURAL_DATA_DIR)) {
-        this.logger.log(`Directory ${PROCESSED_NEURAL_DATA_DIR} does not exist. No data to ingest.`);
+        this.logger.log(
+          `Directory ${PROCESSED_NEURAL_DATA_DIR} does not exist. No data to ingest.`,
+        );
         return;
       }
 
-      const jsonFiles = fs.readdirSync(PROCESSED_NEURAL_DATA_DIR)
-        .filter(file => file.endsWith('.json'));
+      const jsonFiles = fs
+        .readdirSync(PROCESSED_NEURAL_DATA_DIR)
+        .filter((file) => file.endsWith('.json'));
 
       if (jsonFiles.length === 0) {
         this.logger.log('No JSON files found in processed data directory.');
@@ -87,14 +90,16 @@ export class AppService {
 
         try {
           const fileContent = fs.readFileSync(filePath, 'utf8');
-          const spikeData = JSON.parse(fileContent);
+          const spikeData = JSON.parse(fileContent) as Spike[];
 
           if (!Array.isArray(spikeData)) {
-            this.logger.warn(`File ${jsonFile} does not contain an array of spike data. Skipping.`);
+            this.logger.warn(
+              `File ${jsonFile} does not contain an array of spike data. Skipping.`,
+            );
             continue;
           }
 
-          const spikes = spikeData.map(spike => {
+          const spikes = spikeData.map((spike) => {
             const spikeEntity = new Spike();
             spikeEntity.channel = spike.channel;
             spikeEntity.spikeTime = spike.spikeTime;
@@ -106,14 +111,12 @@ export class AppService {
 
           totalSpikesIngested += spikes.length;
           this.logger.log(`Ingested ${spikes.length} spikes from ${jsonFile}`);
-
         } catch (error) {
           this.logger.error(`Error processing file ${jsonFile}:`, error);
         }
       }
 
       this.logger.log(`Total spikes ingested: ${totalSpikesIngested}`);
-
     } catch (error) {
       this.logger.error('Error ingesting neural data to database:', error);
       throw error;

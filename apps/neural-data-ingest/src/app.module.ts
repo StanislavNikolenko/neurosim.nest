@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Spike } from './spike.entity';
@@ -14,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: "postgres",
+        type: 'postgres',
         host: configService.get('DB_HOST'),
         port: parseInt(configService.get('DB_PORT') || '5432'),
         username: configService.get('DB_USERNAME'),
@@ -28,6 +28,6 @@ import { ConfigService } from '@nestjs/config';
     TypeOrmModule.forFeature([Spike]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, Logger],
 })
 export class AppModule {}

@@ -9,8 +9,7 @@ export abstract class AbstractStorageService implements IStorageService {
   ): Promise<StorageResult>;
 
   protected generateKey(originalName: string, prefix?: string): string {
-    const fileExtension = originalName.split('.').pop();
-    const baseKey = `${prefix || 'uploads'}/${originalName}.${fileExtension}`;
+    const baseKey = `${prefix || 'uploads'}/${originalName}`;
     return baseKey;
   }
 
