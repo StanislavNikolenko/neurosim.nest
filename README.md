@@ -2,7 +2,7 @@
 
 ## Description
 
-Project for running neural simulations using NestJS.
+Project for running neural simulations based on the raw neural data.
 
 ## Project setup
 
@@ -22,6 +22,17 @@ $ npm run start:dev
 # production mode
 $ npm run start:prod
 ```
+
+## Environment
+
+Create `config` folder in the project root.
+Create `${stage}.env` file for your envs.
+
+## Storage service
+
+For local storage set `STORAGE_TYPE=local` in `the /config/{stage}.env` file  
+For S3 storage set `STORAGE_TYPE=s3` in the `/config/{stage}.env` file
+
 
 ## Extract neural data
 
