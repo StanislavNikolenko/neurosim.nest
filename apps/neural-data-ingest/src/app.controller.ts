@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { Spike } from './spike.entity';
@@ -10,6 +10,16 @@ export class AppController {
   @MessagePattern({ cmd: 'ingest' })
   ingest(): Promise<string> {
     return this.appService.ingest();
+  }
+
+  // HTTP health endpoint
+  @Get('health')
+  health() {
+    return {
+      status: 'ok',
+      service: 'neural-data-ingest',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @MessagePattern({ cmd: 'getSpike' })

@@ -8,8 +8,10 @@ async function bootstrap() {
     {
       transport: Transport.TCP,
       options: {
-        host: process.env.NEURAL_INGEST_HOST || 'localhost',
-        port: parseInt(process.env.NEURAL_INGEST_PORT || '3001'),
+        // host: process.env.NEURAL_INGEST_HOST || 'localhost',
+        // port: parseInt(process.env.NEURAL_INGEST_PORT || '3001'),
+        host: process.env.HOST || '0.0.0.0', // Use HOST instead of NEURAL_INGEST_HOST
+        port: parseInt(process.env.PORT || '3002'), // Use PORT instead of NEURAL_INGEST_PORT
       },
     },
   );

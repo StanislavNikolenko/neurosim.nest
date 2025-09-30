@@ -40,4 +40,9 @@ export class AppController {
   getSpike(@Param('id') id: string): Observable<any> {
     return this.appService.getSpike(id);
   }
+
+  @Get('health')
+  health() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
 }

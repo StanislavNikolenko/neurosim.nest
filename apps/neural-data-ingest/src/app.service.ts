@@ -13,9 +13,14 @@ const execAsync = promisify(exec);
 const PYTHON_PATH = process.env.PYTHON_PATH || 'python3';
 const PROCESSED_NEURAL_DATA_DIR =
   process.env.PROCESSED_NEURAL_DATA_DIR || 'processed_neural_data';
+// const SCRIPT_PATH = path.resolve(
+//   process.cwd(),
+//   'apps/neural-data-ingest/src/extract-data.py',
+// );
+
 const SCRIPT_PATH = path.resolve(
   process.cwd(),
-  'apps/neural-data-ingest/src/extract-data.py',
+  'dist/neural-data-ingest/src/extract-data.py',
 );
 
 @Injectable()
