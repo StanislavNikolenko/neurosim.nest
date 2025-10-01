@@ -13,15 +13,24 @@ const execAsync = promisify(exec);
 const PYTHON_PATH = process.env.PYTHON_PATH || 'python3';
 const PROCESSED_NEURAL_DATA_DIR =
   process.env.PROCESSED_NEURAL_DATA_DIR || 'processed_neural_data';
-// const SCRIPT_PATH = path.resolve(
-//   process.cwd(),
-//   'apps/neural-data-ingest/src/extract-data.py',
-// );
 
-const SCRIPT_PATH = path.resolve(
-  process.cwd(),
-  'dist/neural-data-ingest/src/extract-data.py',
-);
+const getScriptPath = (): string => {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction) {
+    return path.resolve(
+      process.cwd(),
+      'dist/neural-data-ingest/src/extract-data.py',
+    );
+  } else {
+    return path.resolve(
+      process.cwd(),
+      'apps/neural-data-ingest/src/extract-data.py',
+    );
+  }
+};
+
+const SCRIPT_PATH = getScriptPath();
 
 @Injectable()
 export class AppService {
@@ -49,11 +58,6 @@ export class AppService {
 
   async runPythonScript(): Promise<string> {
     try {
-      this.logger.log('Running Python script...');
-      this.logger.log('process.env.SCRIPT_PATH', process.env.SCRIPT_PATH);
-      this.logger.log(`PYTHON_PATH: ${PYTHON_PATH}`);
-      this.logger.log('SCRIPT_PATH: ', SCRIPT_PATH);
-
       const { stdout, stderr } = await execAsync(
         `${PYTHON_PATH} ${SCRIPT_PATH}`,
       );
