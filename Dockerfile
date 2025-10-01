@@ -14,7 +14,7 @@ RUN npm ci
 
 # Copy source code
 COPY apps/ ./apps/
-COPY config/ ./config/
+# COPY config/ ./config/
 
 # Build the application
 RUN npm run build
@@ -35,7 +35,7 @@ RUN npm ci --only=production && npm cache clean --force
 COPY --from=builder /app/dist ./dist
 
 # Copy config files
-COPY --from=builder /app/config ./config
+# COPY --from=builder /app/config ./config
 
 # Expose port
 EXPOSE 3000

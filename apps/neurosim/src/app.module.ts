@@ -11,7 +11,7 @@ import { Logger } from '@nestjs/common';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: `./config/.${process.env.NODE_ENV}.env`,
+      envFilePath: '.env',
     }),
     ClientsModule.register([
       {
@@ -19,7 +19,7 @@ import { Logger } from '@nestjs/common';
         transport: Transport.TCP,
         options: {
           host: process.env.INGEST_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.INGEST_SERVICE_PORT || '3002'),
+          port: parseInt(process.env.INGEST_SERVICE_PORT || '3001'),
         },
       },
     ]),
