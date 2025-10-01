@@ -9,3 +9,6 @@ README.md
 coverage
 .nyc_output
 .coverage 
+
+# MacOS system files
+.DS_Store
