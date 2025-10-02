@@ -40,7 +40,7 @@ services:
   neurosim:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/neurosim/Dockerfile
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
