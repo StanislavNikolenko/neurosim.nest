@@ -13,6 +13,7 @@ const execAsync = promisify(exec);
 const PYTHON_PATH = process.env.PYTHON_PATH || 'python3';
 const PROCESSED_NEURAL_DATA_DIR =
   process.env.PROCESSED_NEURAL_DATA_DIR || 'processed_neural_data';
+const NEURAL_DATA_DIR = process.env.NEURAL_DATA_DIR || 'data/uploads';
 
 const getScriptPath = (): string => {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -58,6 +59,11 @@ export class AppService {
 
   async runPythonScript(): Promise<string> {
     try {
+      if (!fs.existsSync(NEURAL_DATA_DIR)) {
+        this.logger.log(`Creating directory: ${NEURAL_DATA_DIR}`);
+        fs.mkdirSync(NEURAL_DATA_DIR, { recursive: true });
+      }
+
       const { stdout, stderr } = await execAsync(
         `${PYTHON_PATH} ${SCRIPT_PATH}`,
       );
@@ -76,6 +82,11 @@ export class AppService {
 
   async ingestNeuralDataToDatabase(): Promise<void> {
     try {
+      if (!fs.existsSync(PROCESSED_NEURAL_DATA_DIR)) {
+        this.logger.log(`Creating directory: ${PROCESSED_NEURAL_DATA_DIR}`);
+        fs.mkdirSync(PROCESSED_NEURAL_DATA_DIR, { recursive: true });
+      }
+
       if (!fs.existsSync(PROCESSED_NEURAL_DATA_DIR)) {
         this.logger.log(
           `Directory ${PROCESSED_NEURAL_DATA_DIR} does not exist. No data to ingest.`,

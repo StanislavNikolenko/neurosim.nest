@@ -1,5 +1,4 @@
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
     environment:
@@ -13,7 +12,6 @@ services:
     networks:
       - neurosim-network
 
-  # Neural Data Ingest Service
   neural-data-ingest:
     build:
       context: .
@@ -39,7 +37,6 @@ services:
       - ./data:/app/data
       - ./processed_neural_data:/app/processed_neural_data
 
-  # Main Neurosim Service
   neurosim:
     build:
       context: .

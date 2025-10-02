@@ -1,8 +1,8 @@
 {
   "name": "neurosim.nest",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Project for running neural simulations based on the raw neural data.",
+  "author": "Stanislav Nikolenko",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -14,7 +14,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/neurosim/src/main",
     "start:ingest:prod": "node dist/neural-data-ingest/src/main",
-    "docker:build": "docker-compose up --build",
+    "docker:build": "docker-compose build",
     "docker:start": "docker-compose up",
     "docker:stop": "docker-compose down",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
