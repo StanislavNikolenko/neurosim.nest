@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - neurosim-network
+
+  neural-data-ingest:
+    build:
+      context: .
+      dockerfile: apps/neural-data-ingest/Dockerfile
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+    networks:
+      - neurosim-network
+    volumes:
+      - ./data:/app/data
+      - ./processed_neural_data:/app/processed_neural_data
+
+  neurosim:
+    build:
+      context: .
+      dockerfile: apps/neurosim/Dockerfile
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      INGEST_SERVICE_HOST: neural-data-ingest
+      INGEST_SERVICE_PORT: 3001
+      STORAGE_TYPE: ${STORAGE_TYPE}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - neural-data-ingest
+    networks:
+      - neurosim-network
+    volumes:
+      - ./data:/app/data
+
+volumes:
+  postgres_data:
+
+networks:
+  neurosim-network:
+    driver: bridge 

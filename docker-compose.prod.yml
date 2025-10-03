@@ -15,7 +15,7 @@ services:
   neural-data-ingest:
     build:
       context: .
-      dockerfile: apps/neural-data-ingest/Dockerfile
+      dockerfile: apps/neural-data-ingest/Dockerfile.optimized
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       DB_HOST: postgres
@@ -40,7 +40,7 @@ services:
   neurosim:
     build:
       context: .
-      dockerfile: apps/neurosim/Dockerfile
+      dockerfile: apps/neurosim/Dockerfile.optimized
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 3000
