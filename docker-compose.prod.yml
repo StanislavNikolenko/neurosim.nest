@@ -23,10 +23,6 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      HOST: 0.0.0.0
-      PORT: 3001
-      NEURAL_INGEST_HOST: 0.0.0.0  # Add this line
-      NEURAL_INGEST_PORT: 3001     # Add this line
     ports:
       - "3001:3001"
     depends_on:
@@ -46,7 +42,7 @@ services:
       PORT: 3000
       INGEST_SERVICE_HOST: neural-data-ingest
       INGEST_SERVICE_PORT: 3001
-      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      STORAGE_TYPE: ${STORAGE_TYPE}
       AWS_REGION: ${AWS_REGION}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}

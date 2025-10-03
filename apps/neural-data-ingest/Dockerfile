@@ -33,7 +33,6 @@ COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
-
 COPY --from=builder /app/apps/neural-data-ingest/src/extract-data.py ./dist/neural-data-ingest/src/extract-data.py
 
 EXPOSE 3001
