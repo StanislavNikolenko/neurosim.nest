@@ -41,8 +41,9 @@ export class S3StorageService extends AbstractStorageService {
 
       return this.createStorageResult(file, fileKey, url);
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      throw new Error(`S3 upload failed: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`S3 upload failed: ${errorMessage}`);
     }
   }
 }

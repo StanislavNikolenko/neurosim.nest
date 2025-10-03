@@ -11,7 +11,7 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  eslintConfigPrettier, // Disables conflicting ESLint rules
+  eslintConfigPrettier,
   {
     files: ['**/*.{ts,js}'],
     languageOptions: {
@@ -29,15 +29,12 @@ export default tseslint.config(
       prettier: eslintPluginPrettier,
     },
     rules: {
-      // Prettier rules - this is what shows format errors
       'prettier/prettier': 'error',
-      
-      // TypeScript rules
+
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      
-      // Additional useful rules
+
       'no-unused-vars': 'off',
       'no-console': 'warn',
     },

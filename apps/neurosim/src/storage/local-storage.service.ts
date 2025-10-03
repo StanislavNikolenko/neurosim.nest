@@ -37,8 +37,9 @@ export class LocalStorageService extends AbstractStorageService {
 
       return this.createStorageResult(file, fileKey, url);
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      throw new Error(`Local storage upload failed: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Local upload failed: ${errorMessage}`);
     }
   }
 }

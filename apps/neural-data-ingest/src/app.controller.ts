@@ -12,7 +12,6 @@ export class AppController {
     return this.appService.ingest();
   }
 
-  // HTTP health endpoint
   @Get('health')
   health() {
     return {
