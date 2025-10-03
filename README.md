@@ -2,95 +2,54 @@
 
 ## Description
 
-Project for running neural simulations based on the raw neural data.
+Backend part of the service for running neural simulations based on the raw neural data.
+The Neurosim service gets files with raw neural data from frontend, converts them into JSON files and ingest to DB.
 
-## Project setup
+You may store raw data and JSON files locally or in S3 bucket. For local storage set `STORAGE_TYPE=local` in the `.env` file. For S3 storage set `STORAGE_TYPE=s3` in the `.env` file. If you want to use other external storage create your own storage service, put it to the `apps/neurosim/src/storage` and add it to the storage switching logic in the `app.module.ts`.
+
+## Prerequisites
+
+- Node.js (see `.nvmrc` for version)
+- Docker and Docker Compose
+- PostgreSQL (for production)
+
+## Environment Setup
+
+Copy the `.env.template` file from the project root and rename it to the `.env`.
+Specify your own values for environment variables in the `.env` file.
+
+## Development
 
 ```bash
-$ npm install
-```
+# Install Node.js version
+$ nvm use
 
-## Compile and run the project
+# Install dependencies
+$ npm ci
 
-```bash
-# development
-$ npm run start
-
-# watch mode
+# Start neurosim development server
 $ npm run start:dev
 
-# production mode
-$ npm run start:prod
+# Start neural-data-ingest development server
+$ npm run start:ingest
 ```
 
-## Environment
-
-Create `config` folder in the project root.
-Create `${stage}.env` file for your envs.
-
-## Storage service
-
-For local storage set `STORAGE_TYPE=local` in `the /config/{stage}.env` file  
-For S3 storage set `STORAGE_TYPE=s3` in the `/config/{stage}.env` file
-
-
-## Extract neural data
-
-Run the command `python3 extract-data.py` from project root to extract the spike times from the .dat file.
-
+## Production
 ```bash
-$ python3 extract-data.py
+# Build and start with Docker
+$ npm run docker:start:prod
 ```
+## API Endpoints
 
-## Run tests
+- `POST /upload` - Upload neural data files
+- `GET /spike/:id` - Get spike data by ID
+- `GET /health` - Health check
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Project structure
+- `apps/` - Applications of the project
+  - `neural-data-ingest/` - Microservice which retrieves spike data from raw neural data, converts them into JSON files and ingest to DB.
+  - `neurosim/` - API Gateway application that takes requests from frontend and sends them to the neural-data-ingest microservice.
+- `.nvmrc` - Current project Node.js version to which you may switch by `nvm use` command
+- `docker-compose.dev.yml` - Config for building and running Docker stack for development
+- `docker-compose.prod.yml` - Config for building and running Docker stack for production
+- `.env.template` - Environment variables template
