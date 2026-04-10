@@ -2,14 +2,29 @@ import { Logger, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Spike } from './spike.entity';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
+import { IngestProcessor } from './infrastructure/queue/ingest.processor';
+import { NEURAL_INGEST_QUEUE_NAME } from './infrastructure/queue/queue.constants';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: '.env',
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: parseInt(configService.get<string>('REDIS_PORT', '6379'), 10),
+        },
+      }),
+      inject: [ConfigService],
+    }),
+    BullModule.registerQueue({
+      name: NEURAL_INGEST_QUEUE_NAME,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -28,6 +43,6 @@ import { ConfigService } from '@nestjs/config';
     TypeOrmModule.forFeature([Spike]),
   ],
   controllers: [AppController],
-  providers: [AppService, Logger],
+  providers: [AppService, Logger, IngestProcessor],
 })
 export class AppModule {}

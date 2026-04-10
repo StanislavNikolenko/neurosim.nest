@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Inject,
   Param,
   Post,
   UploadedFile,
@@ -10,34 +9,26 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Observable } from 'rxjs';
 import { AppService } from './app.service';
-import { IStorageService, StorageResult } from './storage/storage.interface';
-import { Logger } from '@nestjs/common';
+import { UploadNeuralFileUseCase } from './application/use-cases/upload-neural-file.use-case';
+import type { UploadNeuralFileResult } from './application/types/upload-neural-file-result';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    @Inject('STORAGE_SERVICE') private readonly storageService: IStorageService,
-    private readonly logger: Logger,
+    private readonly uploadNeuralFileUseCase: UploadNeuralFileUseCase,
   ) {}
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<StorageResult> {
-    const result = await this.storageService.uploadFile(file);
-
-    this.appService.ingest().subscribe({
-      next: (response) => this.logger.log('Ingest completed:', response),
-      error: (error) => this.logger.error('Ingest failed:', error),
-    });
-
-    return result;
+  ): Promise<UploadNeuralFileResult> {
+    return this.uploadNeuralFileUseCase.execute(file);
   }
 
   @Get('spike/:id')
-  getSpike(@Param('id') id: string): Observable<any> {
+  getSpike(@Param('id') id: string): Observable<unknown> {
     return this.appService.getSpike(id);
   }
 

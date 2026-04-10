@@ -7,12 +7,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LocalStorageService } from './storage/local-storage.service';
 import { S3StorageService } from './storage/s3-storage.service';
 import { Logger } from '@nestjs/common';
+import { QueueModule } from './infrastructure/queue/queue.module';
+import { UploadNeuralFileUseCase } from './application/use-cases/upload-neural-file.use-case';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: '.env',
     }),
+    QueueModule,
     ClientsModule.register([
       {
         name: 'INGEST_SERVICE',
@@ -27,6 +30,7 @@ import { Logger } from '@nestjs/common';
   controllers: [AppController],
   providers: [
     AppService,
+    UploadNeuralFileUseCase,
     LocalStorageService,
     S3StorageService,
     Logger,
