@@ -6,12 +6,7 @@ import { Observable } from 'rxjs';
 export class AppService {
   constructor(@Inject('INGEST_SERVICE') private ingestClient: ClientProxy) {}
 
-  ingest(): Observable<any> {
-    const pattern = { cmd: 'ingest' };
-    return this.ingestClient.send(pattern, {});
-  }
-
-  getSpike(id: string): Observable<any> {
+  getSpike(id: string): Observable<unknown> {
     const pattern = { cmd: 'getSpike' };
     const payload = { spikeId: id };
     return this.ingestClient.send(pattern, payload);
