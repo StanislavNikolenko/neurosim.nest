@@ -54,7 +54,7 @@ export class S3StorageService extends AbstractStorageService {
       Bucket: this.bucketName,
       Key: `user-uploads/${key}`,
     });
-    return await getSignedUrl(this.s3Client, putObjectCommand, {
+    return getSignedUrl(this.s3Client, putObjectCommand, {
       expiresIn: 60,
     });
   }
