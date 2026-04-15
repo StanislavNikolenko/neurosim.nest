@@ -54,12 +54,8 @@ export class S3StorageService extends AbstractStorageService {
       Bucket: this.bucketName,
       Key: `user-uploads/${key}`,
     });
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
-    const signedUrl = await getSignedUrl(this.s3Client, putObjectCommand, {
+    return await getSignedUrl(this.s3Client, putObjectCommand, {
       expiresIn: 60,
     });
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return signedUrl;
   }
 }
