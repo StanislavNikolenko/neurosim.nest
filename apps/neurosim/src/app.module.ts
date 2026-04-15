@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { ClientsModule } from '@nestjs/microservices';
 import { Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { LocalStorageService } from './storage/local-storage.service';
 import { S3StorageService } from './storage/s3-storage.service';
 import { Logger } from '@nestjs/common';
 import { QueueModule } from './infrastructure/queue/queue.module';
@@ -31,7 +30,6 @@ import { UploadNeuralFileUseCase } from './application/use-cases/upload-neural-f
   providers: [
     AppService,
     UploadNeuralFileUseCase,
-    LocalStorageService,
     S3StorageService,
     Logger,
     {
@@ -41,8 +39,6 @@ import { UploadNeuralFileUseCase } from './application/use-cases/upload-neural-f
 
         if (storageType === 's3') {
           return new S3StorageService(configService);
-        } else {
-          return new LocalStorageService(configService);
         }
       },
       inject: [ConfigService],

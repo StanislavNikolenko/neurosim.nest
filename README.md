@@ -2,10 +2,7 @@
 
 ## Description
 
-Backend part of the service for running neural simulations based on the raw neural data.
-The Neurosim service gets files with raw neural data from frontend, converts them into JSON files and ingest to DB.
-
-You may store raw data and JSON files locally or in S3 bucket. For local storage set `STORAGE_TYPE=local` in the `.env` file. For S3 storage set `STORAGE_TYPE=s3` in the `.env` file. If you want to use other external storage create your own storage service, put it to the `apps/neurosim/src/storage` and add it to the storage switching logic in the `app.module.ts`.
+A service for running neural simulations based on the raw neural data.
 
 ## Prerequisites
 

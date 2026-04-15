@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { AbstractStorageService } from './abstract-storage.service';
 import { StorageResult } from './storage.interface';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class S3StorageService extends AbstractStorageService {
@@ -21,6 +22,7 @@ export class S3StorageService extends AbstractStorageService {
     this.bucketName = this.configService.get('S3_BUCKET_NAME') ?? '';
   }
 
+  // Remove this method, it is not used anymore
   async uploadFile(
     file: Express.Multer.File,
     key?: string,
@@ -45,5 +47,15 @@ export class S3StorageService extends AbstractStorageService {
         error instanceof Error ? error.message : String(error);
       throw new Error(`S3 upload failed: ${errorMessage}`);
     }
+  }
+
+  public async getUploadUrl(key: string): Promise<string> {
+    const putObjectCommand: PutObjectCommand = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: `user-uploads/${key}`,
+    });
+    return await getSignedUrl(this.s3Client, putObjectCommand, {
+      expiresIn: 60,
+    });
   }
 }
