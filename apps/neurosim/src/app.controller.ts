@@ -1,30 +1,18 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Post,
-  UploadedFile,
-  UseInterceptors,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { AppService } from './app.service';
-import { UploadNeuralFileUseCase } from './application/use-cases/upload-neural-file.use-case';
-import type { UploadNeuralFileResult } from './application/types/upload-neural-file-result';
+import { S3StorageService } from './storage/s3-storage.service';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly uploadNeuralFileUseCase: UploadNeuralFileUseCase,
+    private readonly s3StorageService: S3StorageService,
   ) {}
 
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<UploadNeuralFileResult> {
-    return this.uploadNeuralFileUseCase.execute(file);
+  @Post('upload-url')
+  async uploadUrl(@Body() body: { fileName: string }): Promise<string> {
+    return this.s3StorageService.getUploadUrl(body.fileName);
   }
 
   @Get('spike/:id')
