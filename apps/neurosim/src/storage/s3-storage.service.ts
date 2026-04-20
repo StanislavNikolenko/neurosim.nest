@@ -2,8 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { AbstractStorageService } from './abstract-storage.service';
-import { StorageResult } from './storage.interface';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { randomUUID } from 'crypto';
+
+export interface GetUploadUrlResult {
+  signedUrl: string;
+  correlationId: string;
+  uploadKey: string;
+}
 
 @Injectable()
 export class S3StorageService extends AbstractStorageService {
@@ -22,40 +28,20 @@ export class S3StorageService extends AbstractStorageService {
     this.bucketName = this.configService.get('S3_BUCKET_NAME') ?? '';
   }
 
-  // Remove this method, it is not used anymore
-  async uploadFile(
-    file: Express.Multer.File,
-    key?: string,
-  ): Promise<StorageResult> {
-    const fileKey = key || this.generateKey(file.originalname, 'uploads');
-
-    try {
-      const command = new PutObjectCommand({
-        Bucket: this.bucketName,
-        Key: fileKey,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      });
-
-      await this.s3Client.send(command);
-
-      const url = `https://${this.bucketName}.s3.${this.configService.get('AWS_REGION')}.amazonaws.com/${fileKey}`;
-
-      return this.createStorageResult(file, fileKey, url);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      throw new Error(`S3 upload failed: ${errorMessage}`);
-    }
-  }
-
-  public async getUploadUrl(key: string): Promise<string> {
+  public async getUploadUrl(key: string): Promise<GetUploadUrlResult> {
+    const correlationId = randomUUID();
+    const storageKey = `user-uploads/${key}`;
     const putObjectCommand: PutObjectCommand = new PutObjectCommand({
       Bucket: this.bucketName,
-      Key: `user-uploads/${key}`,
+      Key: storageKey,
     });
-    return getSignedUrl(this.s3Client, putObjectCommand, {
+    const signedUrl = await getSignedUrl(this.s3Client, putObjectCommand, {
       expiresIn: 60,
     });
+    return {
+      signedUrl,
+      correlationId,
+      uploadKey: storageKey,
+    };
   }
 }

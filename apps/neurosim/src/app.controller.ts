@@ -1,18 +1,36 @@
 import { Controller, Get, Param, Post, Body } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { AppService } from './app.service';
-import { S3StorageService } from './storage/s3-storage.service';
+import {
+  GetUploadUrlResult,
+  S3StorageService,
+} from './storage/s3-storage.service';
+import { EnqueueIngestJobUseCase } from './application/use-cases/enqueue-ingest-job.use-case';
+import { EnqueueIngestJobResult } from './application/types/enqueue-ingest-job-result';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
     private readonly s3StorageService: S3StorageService,
+    private readonly enqueueIngestJobUseCase: EnqueueIngestJobUseCase,
   ) {}
 
   @Post('upload-url')
-  async uploadUrl(@Body() body: { fileName: string }): Promise<string> {
+  async uploadUrl(
+    @Body() body: { fileName: string },
+  ): Promise<GetUploadUrlResult> {
     return this.s3StorageService.getUploadUrl(body.fileName);
+  }
+
+  @Post('upload-complete')
+  completeUpload(
+    @Body() body: { uploadKey: string; correlationId: string },
+  ): Promise<EnqueueIngestJobResult> {
+    return this.enqueueIngestJobUseCase.execute(
+      body.uploadKey,
+      body.correlationId,
+    );
   }
 
   @Get('spike/:id')

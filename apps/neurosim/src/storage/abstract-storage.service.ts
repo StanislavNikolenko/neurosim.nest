@@ -1,29 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { IStorageService, StorageResult } from './storage.interface';
+import { IStorageService } from './storage.interface';
+import { GetUploadUrlResult } from './s3-storage.service';
 
 @Injectable()
 export abstract class AbstractStorageService implements IStorageService {
-  abstract uploadFile(
-    file: Express.Multer.File,
-    key?: string,
-  ): Promise<StorageResult>;
-
-  protected generateKey(originalName: string, prefix?: string): string {
-    const baseKey = `${prefix || 'uploads'}/${originalName}`;
-    return baseKey;
-  }
-
-  protected createStorageResult(
-    file: Express.Multer.File,
-    key: string,
-    url: string,
-  ): StorageResult {
-    return {
-      url,
-      key,
-      originalName: file.originalname,
-      size: file.size,
-      type: file.mimetype,
-    };
-  }
+  abstract getUploadUrl(key: string): Promise<GetUploadUrlResult>;
 }
