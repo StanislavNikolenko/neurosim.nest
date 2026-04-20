@@ -7,7 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { S3StorageService } from './storage/s3-storage.service';
 import { Logger } from '@nestjs/common';
 import { QueueModule } from './infrastructure/queue/queue.module';
-import { UploadNeuralFileUseCase } from './application/use-cases/upload-neural-file.use-case';
+import { EnqueueIngestJobUseCase } from './application/use-cases/enqueue-ingest-job.use-case';
 
 @Module({
   imports: [
@@ -29,7 +29,7 @@ import { UploadNeuralFileUseCase } from './application/use-cases/upload-neural-f
   controllers: [AppController],
   providers: [
     AppService,
-    UploadNeuralFileUseCase,
+    EnqueueIngestJobUseCase,
     S3StorageService,
     Logger,
     {

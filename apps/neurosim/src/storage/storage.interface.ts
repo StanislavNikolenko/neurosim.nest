@@ -1,11 +1,5 @@
-export interface StorageResult {
-  url: string;
-  key: string;
-  originalName: string;
-  size: number;
-  type: string;
-}
+import { GetUploadUrlResult } from './s3-storage.service';
 
 export interface IStorageService {
-  uploadFile(file: Express.Multer.File, key?: string): Promise<StorageResult>;
+  getUploadUrl(key: string): Promise<GetUploadUrlResult>;
 }
