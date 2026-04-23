@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { AbstractStorageService } from './abstract-storage.service';
@@ -8,7 +8,7 @@ import { randomUUID } from 'crypto';
 export interface GetUploadUrlResult {
   signedUrl: string;
   correlationId: string;
-  uploadKey: string;
+  datasetId: string;
 }
 
 @Injectable()
@@ -28,9 +28,10 @@ export class S3StorageService extends AbstractStorageService {
     this.bucketName = this.configService.get('S3_BUCKET_NAME') ?? '';
   }
 
-  public async getUploadUrl(key: string): Promise<GetUploadUrlResult> {
+  public async getUploadUrl(fileName: string): Promise<GetUploadUrlResult> {
+    const datasetId = this.extractDatasetId(fileName);
     const correlationId = randomUUID();
-    const storageKey = `user-uploads/${key}`;
+    const storageKey = `raw/${datasetId}/${fileName}`;
     const putObjectCommand: PutObjectCommand = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: storageKey,
@@ -41,7 +42,20 @@ export class S3StorageService extends AbstractStorageService {
     return {
       signedUrl,
       correlationId,
-      uploadKey: storageKey,
+      datasetId,
     };
+  }
+
+  public extractDatasetId(fileName: string): string {
+    const match = fileName.match(
+      /^([A-Za-z0-9_-]+)(?:\.\d+)?\.(xml|dat|nrs)$/i,
+    );
+    if (!match) {
+      throw new BadRequestException(
+        `Unsupported filename format: ${fileName}. Expected <dataset>.<sequence>.<xml|dat|nrs>`,
+      );
+    }
+    const dataset = match[1];
+    return dataset.slice(0, 6);
   }
 }

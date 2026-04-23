@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Post, Body } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { AppService } from './app.service';
 import {
@@ -20,15 +27,18 @@ export class AppController {
   async uploadUrl(
     @Body() body: { fileName: string },
   ): Promise<GetUploadUrlResult> {
+    if (!body?.fileName || typeof body.fileName !== 'string') {
+      throw new BadRequestException('fileName is required');
+    }
     return this.s3StorageService.getUploadUrl(body.fileName);
   }
 
   @Post('upload-complete')
   completeUpload(
-    @Body() body: { uploadKey: string; correlationId: string },
+    @Body() body: { datasetId: string; correlationId: string },
   ): Promise<EnqueueIngestJobResult> {
     return this.enqueueIngestJobUseCase.execute(
-      body.uploadKey,
+      body.datasetId,
       body.correlationId,
     );
   }

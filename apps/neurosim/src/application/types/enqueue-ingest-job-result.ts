@@ -1,5 +1,5 @@
 export interface EnqueueIngestJobResult {
-  key: string;
+  datasetId: string;
   jobId: string;
   correlationId: string;
 }
