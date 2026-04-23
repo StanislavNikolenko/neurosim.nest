@@ -7,11 +7,6 @@ import { Spike } from './spike.entity';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @MessagePattern({ cmd: 'ingest' })
-  ingest(): Promise<string> {
-    return this.appService.ingest();
-  }
-
   @Get('health')
   health() {
     return {

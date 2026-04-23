@@ -9,15 +9,15 @@ export class EnqueueIngestJobUseCase {
   ) {}
 
   async execute(
-    key: string,
+    datasetId: string,
     correlationId: string,
   ): Promise<EnqueueIngestJobResult> {
     const jobId = await this.jobQueue.enqueueIngestJob({
       correlationId,
-      storageKey: key,
+      datasetId,
     });
     return {
-      key,
+      datasetId,
       jobId,
       correlationId,
     };

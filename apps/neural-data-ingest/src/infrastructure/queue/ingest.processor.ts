@@ -3,12 +3,7 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AppService } from '../../app.service';
 import { NEURAL_INGEST_QUEUE_NAME } from './queue.constants';
-
-export interface IngestJobPayload {
-  correlationId: string;
-  storageKey: string;
-  originalName: string;
-}
+import { IngestJobPayload } from './ingest-job-payload';
 
 @Processor(NEURAL_INGEST_QUEUE_NAME)
 export class IngestProcessor extends WorkerHost {
@@ -20,8 +15,8 @@ export class IngestProcessor extends WorkerHost {
 
   async process(job: Job<IngestJobPayload>): Promise<string> {
     this.logger.log(
-      `Processing ingest job id=${job.id} correlationId=${job.data?.correlationId} key=${job.data?.storageKey}`,
+      `Processing ingest job id=${job.id} correlationId=${job.data?.correlationId} dataset=${job.data?.datasetId}`,
     );
-    return this.appService.ingest();
+    return this.appService.ingest(job.data);
   }
 }

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import json
 import os
 import glob
+import sys
 from dotenv import load_dotenv
 
 # Load environment variables from config/.env
@@ -105,7 +106,22 @@ def process_file_pair(xml_file, dat_file):
     export_spike_times(spike_indices, config["sampling_rate"], output_file)
     return output_file
 
+def process_single_input(xml_file, dat_file):
+    if not os.path.exists(xml_file):
+        raise FileNotFoundError(f"XML file not found: {xml_file}")
+    if not os.path.exists(dat_file):
+        raise FileNotFoundError(f"DAT file not found: {dat_file}")
+    output_file = process_file_pair(xml_file, dat_file)
+    print(output_file)
+    return output_file
+
 def main():
+    # Queue-driven mode: explicit xml and dat paths are passed from worker.
+    if len(sys.argv) == 3:
+        xml_file = sys.argv[1]
+        dat_file = sys.argv[2]
+        return process_single_input(xml_file, dat_file)
+
     # Get all XML files in the data directory and its subdirectories
     data_dir = "data/uploads"
     print(f"Processing files in {data_dir}");
