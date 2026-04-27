@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { IngestProcessor } from './infrastructure/queue/ingest.processor';
 import { NEURAL_INGEST_QUEUE_NAME } from './infrastructure/queue/queue.constants';
+import { OBJECT_STORAGE_PORT } from './application/ports/object-storage.port';
+import { S3StorageService } from './infrastructure/storage/s3-storage.service';
 
 @Module({
   imports: [
@@ -43,6 +45,14 @@ import { NEURAL_INGEST_QUEUE_NAME } from './infrastructure/queue/queue.constants
     TypeOrmModule.forFeature([Spike]),
   ],
   controllers: [AppController],
-  providers: [AppService, Logger, IngestProcessor],
+  providers: [
+    AppService,
+    Logger,
+    IngestProcessor,
+    {
+      provide: OBJECT_STORAGE_PORT,
+      useClass: S3StorageService,
+    },
+  ],
 })
 export class AppModule {}

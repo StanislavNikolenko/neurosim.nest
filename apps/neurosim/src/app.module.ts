@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { ClientsModule } from '@nestjs/microservices';
 import { Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { S3StorageService } from './storage/s3-storage.service';
+import { S3StorageService } from './infrastructure/storage/s3-storage.service';
 import { Logger } from '@nestjs/common';
 import { QueueModule } from './infrastructure/queue/queue.module';
 import { EnqueueIngestJobUseCase } from './application/use-cases/enqueue-ingest-job.use-case';

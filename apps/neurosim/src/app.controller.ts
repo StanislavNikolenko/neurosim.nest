@@ -11,7 +11,7 @@ import { AppService } from './app.service';
 import {
   GetUploadUrlResult,
   S3StorageService,
-} from './storage/s3-storage.service';
+} from './infrastructure/storage/s3-storage.service';
 import { EnqueueIngestJobUseCase } from './application/use-cases/enqueue-ingest-job.use-case';
 import { EnqueueIngestJobResult } from './application/types/enqueue-ingest-job-result';
 
