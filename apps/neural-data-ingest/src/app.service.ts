@@ -1,21 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
-import { tmpdir } from 'os';
 import { Spike } from './spike.entity';
 import { Logger } from '@nestjs/common';
 import { IngestJobPayload } from './infrastructure/queue/ingest-job-payload';
 import { ConfigService } from '@nestjs/config';
+import { S3Client } from '@aws-sdk/client-s3';
 import {
-  GetObjectCommand,
-  ListObjectsV2Command,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+  OBJECT_STORAGE_PORT,
+  ObjectStoragePort,
+} from './application/ports/object-storage.port';
 
 const execAsync = promisify(exec);
 
@@ -50,6 +48,8 @@ export class AppService {
     private neuralSpikeRepository: Repository<Spike>,
     private readonly logger: Logger,
     private readonly configService: ConfigService,
+    @Inject(OBJECT_STORAGE_PORT)
+    private readonly storageService: ObjectStoragePort,
   ) {
     this.s3Client = new S3Client({
       region: this.configService.get<string>('AWS_REGION') ?? '',
@@ -75,7 +75,10 @@ export class AppService {
     const bucketName = this.getRequiredBucketName();
     const datasetId = payload.datasetId;
     const prefix = `raw/${datasetId}/`;
-    const objectKeys = await this.listObjectKeys(bucketName, prefix);
+    const objectKeys = await this.storageService.listObjectKeys(
+      bucketName,
+      prefix,
+    );
     const xmlKeys = objectKeys.filter((key) =>
       key.toLowerCase().endsWith('.xml'),
     );
@@ -97,13 +100,13 @@ export class AppService {
         continue;
       }
 
-      const xmlTempPath = await this.downloadObjectToTempFile(
+      const xmlTempPath = await this.storageService.downloadObjectToTempFile(
         bucketName,
         xmlKey,
         '.xml',
       );
 
-      const datTempPath = await this.downloadObjectToTempFile(
+      const datTempPath = await this.storageService.downloadObjectToTempFile(
         bucketName,
         datKey,
         '.dat',
@@ -117,7 +120,11 @@ export class AppService {
         const outputContent = fs.readFileSync(outputFilePath, 'utf8');
         const outputKey = this.buildOutputKey(datasetId, datKey);
 
-        await this.uploadJsonToS3(bucketName, outputKey, outputContent);
+        await this.storageService.uploadJsonToBucket(
+          bucketName,
+          outputKey,
+          outputContent,
+        );
         const ingestedCount = await this.ingestNeuralDataToDatabase(
           outputContent,
           outputKey,
@@ -190,87 +197,11 @@ export class AppService {
     }
   }
 
-  private async listObjectKeys(
-    bucketName: string,
-    prefix: string,
-  ): Promise<string[]> {
-    const keys: string[] = [];
-    let continuationToken: string | undefined;
-
-    do {
-      const response = await this.s3Client.send(
-        new ListObjectsV2Command({
-          Bucket: bucketName,
-          Prefix: prefix,
-          ContinuationToken: continuationToken,
-        }),
-      );
-
-      const batch = (response.Contents ?? [])
-        .map((item) => item.Key)
-        .filter((key): key is string => Boolean(key));
-      keys.push(...batch);
-
-      continuationToken = response.IsTruncated
-        ? response.NextContinuationToken
-        : undefined;
-    } while (continuationToken);
-
-    return keys;
-  }
-
-  private async downloadObjectToTempFile(
-    bucketName: string,
-    key: string,
-    extension: string,
-  ): Promise<string> {
-    const tempPath = path.join(
-      tmpdir(),
-      `neural-ingest-${Date.now()}-${Math.random().toString(36).slice(2)}${extension}`,
-    );
-
-    const response = await this.s3Client.send(
-      new GetObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-      }),
-    );
-    if (!response.Body) {
-      this.logger.error(`S3 object body is empty: ${key}`);
-      throw new Error(`S3 object body is empty: ${key}`);
-    }
-
-    const chunks: Buffer[] = [];
-    for await (const chunk of response.Body as AsyncIterable<
-      Buffer | Uint8Array
-    >) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-    fs.writeFileSync(tempPath, Buffer.concat(chunks));
-
-    return tempPath;
-  }
-
   private buildOutputKey(datasetId: string, datKey: string): string {
     const fileName = path.posix.basename(datKey, '.dat');
     const outputDir =
       PROCESSED_NEURAL_DATA_DIR || `processed_neural_data/${datasetId}`;
     return `${outputDir.replace(/\/$/, '')}/${fileName}_spikes.json`;
-  }
-
-  private async uploadJsonToS3(
-    bucketName: string,
-    key: string,
-    jsonContent: string,
-  ): Promise<void> {
-    await this.s3Client.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-        Body: Buffer.from(jsonContent, 'utf8'),
-        ContentType: 'application/json',
-      }),
-    );
   }
 
   private getRequiredBucketName(): string {
