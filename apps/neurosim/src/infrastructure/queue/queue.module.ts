@@ -3,7 +3,10 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JOB_QUEUE_PORT } from '../../application/ports/job-queue.port';
 import { BullmqJobQueueService } from './bullmq-job-queue.service';
-import { NEURAL_INGEST_QUEUE_NAME } from './queue.constants';
+import {
+  NEURAL_INGEST_QUEUE_NAME,
+  NEURAL_SIMULATION_QUEUE_NAME,
+} from './queue.constants';
 
 @Module({
   imports: [
@@ -17,9 +20,14 @@ import { NEURAL_INGEST_QUEUE_NAME } from './queue.constants';
       }),
       inject: [ConfigService],
     }),
-    BullModule.registerQueue({
-      name: NEURAL_INGEST_QUEUE_NAME,
-    }),
+    BullModule.registerQueue(
+      {
+        name: NEURAL_INGEST_QUEUE_NAME,
+      },
+      {
+        name: NEURAL_SIMULATION_QUEUE_NAME,
+      },
+    ),
   ],
   providers: [
     BullmqJobQueueService,

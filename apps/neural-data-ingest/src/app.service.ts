@@ -6,20 +6,22 @@ import { Repository } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Spike } from './spike.entity';
+import { SimulationRun } from './simulation-run.entity';
 import { Logger } from '@nestjs/common';
 import { IngestJobPayload } from './infrastructure/queue/ingest-job-payload';
 import { ConfigService } from '@nestjs/config';
-import { S3Client } from '@aws-sdk/client-s3';
 import {
   OBJECT_STORAGE_PORT,
   ObjectStoragePort,
 } from './application/ports/object-storage.port';
+import { SimulationJobPayload } from './infrastructure/queue/simulation-job-payload';
 
 const execAsync = promisify(exec);
 
-const PYTHON_PATH = process.env.PYTHON_PATH || 'python3';
 const PROCESSED_NEURAL_DATA_DIR =
   process.env.PROCESSED_NEURAL_DATA_DIR || 'processed_neural_data';
+const SIMULATION_RESULTS_PREFIX =
+  process.env.SIMULATION_RESULTS_PREFIX || 'simulations';
 
 const getScriptPath = (): string => {
   const isProduction = process.env.NODE_ENV === 'production';
@@ -38,27 +40,32 @@ const getScriptPath = (): string => {
 };
 
 const SCRIPT_PATH = getScriptPath();
+const getSimulationScriptPath = (): string => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return isProduction
+    ? path.resolve(process.cwd(), 'dist/neural-data-ingest/src/simulate-lif.py')
+    : path.resolve(
+        process.cwd(),
+        'apps/neural-data-ingest/src/simulate-lif.py',
+      );
+};
+const SIMULATION_SCRIPT_PATH = getSimulationScriptPath();
 
 @Injectable()
 export class AppService {
-  private readonly s3Client: S3Client;
-
   constructor(
     @InjectRepository(Spike)
-    private neuralSpikeRepository: Repository<Spike>,
+    private readonly neuralSpikeRepository: Repository<Spike>,
+    @InjectRepository(SimulationRun)
+    private readonly simulationRunRepository: Repository<SimulationRun>,
     private readonly logger: Logger,
     private readonly configService: ConfigService,
     @Inject(OBJECT_STORAGE_PORT)
     private readonly storageService: ObjectStoragePort,
-  ) {
-    this.s3Client = new S3Client({
-      region: this.configService.get<string>('AWS_REGION') ?? '',
-      credentials: {
-        accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID') ?? '',
-        secretAccessKey:
-          this.configService.get<string>('AWS_SECRET_ACCESS_KEY') ?? '',
-      },
-    });
+  ) {}
+
+  private getPythonPath(): string {
+    return this.configService.get<string>('PYTHON_PATH', 'python3');
   }
 
   async getSpike(spikeId: number): Promise<Spike> {
@@ -150,7 +157,7 @@ export class AppService {
   ): Promise<string> {
     try {
       const { stdout, stderr } = await execAsync(
-        `${PYTHON_PATH} "${SCRIPT_PATH}" "${xmlPath}" "${datPath}"`,
+        `${this.getPythonPath()} "${SCRIPT_PATH}" "${xmlPath}" "${datPath}"`,
       );
 
       if (stderr) {
@@ -199,9 +206,12 @@ export class AppService {
 
   private buildOutputKey(datasetId: string, datKey: string): string {
     const fileName = path.posix.basename(datKey, '.dat');
-    const outputDir =
-      PROCESSED_NEURAL_DATA_DIR || `processed_neural_data/${datasetId}`;
-    return `${outputDir.replace(/\/$/, '')}/${fileName}_spikes.json`;
+    const base = (
+      this.configService.get<string>('PROCESSED_NEURAL_DATA_DIR')?.trim() ||
+      'processed_neural_data'
+    ).replace(/\/$/, '');
+    const outputDir = `${base}/${datasetId}`;
+    return `${outputDir}/${fileName}_spikes.json`;
   }
 
   private getRequiredBucketName(): string {
@@ -223,5 +233,121 @@ export class AppService {
         `Failed to remove temp file ${filePath}: ${String(error)}`,
       );
     }
+  }
+
+  async createSimulationRun(
+    payload: Omit<SimulationJobPayload, 'simulationRunId'>,
+  ): Promise<SimulationRun> {
+    const run = this.simulationRunRepository.create({
+      datasetId: payload.datasetId,
+      correlationId: payload.correlationId,
+      status: 'queued',
+      params: { ...payload.params },
+      summary: null,
+      resultKey: null,
+      errorMessage: null,
+    });
+    return this.simulationRunRepository.save(run);
+  }
+
+  async getSimulationRun(id: number): Promise<SimulationRun> {
+    const run = await this.simulationRunRepository.findOne({ where: { id } });
+    if (!run) {
+      throw new Error(`Simulation run ${id} not found`);
+    }
+    return run;
+  }
+
+  async runSimulationJob(payload: SimulationJobPayload): Promise<void> {
+    const run = await this.getSimulationRun(payload.simulationRunId);
+    const bucketName = this.getRequiredBucketName();
+    await this.simulationRunRepository.update(run.id, {
+      status: 'running',
+      errorMessage: null,
+    });
+
+    try {
+      const processedPrefix = `${PROCESSED_NEURAL_DATA_DIR.replace(/\/$/, '')}/${payload.datasetId}/`;
+      const processedKeys = await this.storageService.listObjectKeys(
+        bucketName,
+        processedPrefix,
+      );
+      const sourceKey = processedKeys.find((key) =>
+        key.toLowerCase().endsWith('_spikes.json'),
+      );
+      if (!sourceKey) {
+        throw new Error(
+          `No processed spikes JSON found under prefix ${processedPrefix}`,
+        );
+      }
+      const sourcePath = await this.storageService.downloadObjectToTempFile(
+        bucketName,
+        sourceKey,
+        '.json',
+      );
+      try {
+        const simulationOutputPath = await this.runSimulationScript(
+          sourcePath,
+          payload.params,
+        );
+        const outputContent = fs.readFileSync(simulationOutputPath, 'utf8');
+        const outputKey = `${SIMULATION_RESULTS_PREFIX.replace(/\/$/, '')}/${payload.datasetId}/run-${run.id}.json`;
+
+        await this.storageService.uploadJsonToBucket(
+          bucketName,
+          outputKey,
+          outputContent,
+        );
+
+        const parsed = JSON.parse(outputContent) as {
+          summary?: Record<string, number | string | boolean>;
+        };
+        await this.simulationRunRepository.update(run.id, {
+          status: 'completed',
+          resultKey: outputKey,
+          summary: parsed.summary ?? null,
+          errorMessage: null,
+        });
+        this.safeRemoveFile(simulationOutputPath);
+      } finally {
+        this.safeRemoveFile(sourcePath);
+      }
+    } catch (error) {
+      await this.simulationRunRepository.update(run.id, {
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  private async runSimulationScript(
+    spikesJsonPath: string,
+    params: SimulationJobPayload['params'],
+  ): Promise<string> {
+    const args = [
+      `"${spikesJsonPath}"`,
+      `${params.durationMs}`,
+      `${params.dtMs}`,
+      `${params.nExc}`,
+      `${params.nInh}`,
+      `${params.pConnect}`,
+      `${params.wInput}`,
+      `${params.wRec}`,
+      `${params.seed}`,
+    ].join(' ');
+    const { stdout, stderr } = await execAsync(
+      `${this.getPythonPath()} "${SIMULATION_SCRIPT_PATH}" ${args}`,
+    );
+
+    if (stderr) {
+      this.logger.error(`Simulation script stderr: ${stderr}`);
+      throw new Error('Simulation script execution failed');
+    }
+    const outputPath = stdout.trim();
+    if (!outputPath) {
+      throw new Error('Simulation script did not return output path');
+    }
+    return outputPath;
   }
 }

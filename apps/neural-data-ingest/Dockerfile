@@ -34,6 +34,7 @@ RUN npm ci --only=production && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/apps/neural-data-ingest/src/extract-data.py ./dist/neural-data-ingest/src/extract-data.py
+COPY --from=builder /app/apps/neural-data-ingest/src/simulate-lif.py ./dist/neural-data-ingest/src/simulate-lif.py
 
 EXPOSE 3001
 

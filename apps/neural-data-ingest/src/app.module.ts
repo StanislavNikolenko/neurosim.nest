@@ -2,13 +2,18 @@ import { Logger, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { Spike } from './spike.entity';
+import { SimulationRun } from './simulation-run.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
 import { IngestProcessor } from './infrastructure/queue/ingest.processor';
-import { NEURAL_INGEST_QUEUE_NAME } from './infrastructure/queue/queue.constants';
+import {
+  NEURAL_INGEST_QUEUE_NAME,
+  NEURAL_SIMULATION_QUEUE_NAME,
+} from './infrastructure/queue/queue.constants';
 import { OBJECT_STORAGE_PORT } from './application/ports/object-storage.port';
 import { S3StorageService } from './infrastructure/storage/s3-storage.service';
+import { SimulationProcessor } from './infrastructure/queue/simulation.processor';
 
 @Module({
   imports: [
@@ -25,9 +30,14 @@ import { S3StorageService } from './infrastructure/storage/s3-storage.service';
       }),
       inject: [ConfigService],
     }),
-    BullModule.registerQueue({
-      name: NEURAL_INGEST_QUEUE_NAME,
-    }),
+    BullModule.registerQueue(
+      {
+        name: NEURAL_INGEST_QUEUE_NAME,
+      },
+      {
+        name: NEURAL_SIMULATION_QUEUE_NAME,
+      },
+    ),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -37,18 +47,19 @@ import { S3StorageService } from './infrastructure/storage/s3-storage.service';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_NAME'),
-        entities: [Spike],
+        entities: [Spike, SimulationRun],
         synchronize: configService.get('NODE_ENV') !== 'production',
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([Spike]),
+    TypeOrmModule.forFeature([Spike, SimulationRun]),
   ],
   controllers: [AppController],
   providers: [
     AppService,
     Logger,
     IngestProcessor,
+    SimulationProcessor,
     {
       provide: OBJECT_STORAGE_PORT,
       useClass: S3StorageService,
